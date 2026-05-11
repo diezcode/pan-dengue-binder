@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pan-dengue-binder"
+version = "0.1.0"
+description = "Safety-conscious computational research tooling for dengue sequence and structure analysis."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Pan-Dengue Binder Contributors" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+bio = [
+  "biopython>=1.83",
+  "requests>=2.31",
+  "PyYAML>=6.0"
+]
+dev = [
+  "pytest>=8.0"
+]
+
+[project.scripts]
+pandengue = "pandengue.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

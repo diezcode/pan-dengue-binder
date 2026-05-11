@@ -1,38 +1,25 @@
-from Bio import SeqIO
+"""Compatibility wrapper for the sequence-fetch planning stage."""
 
-# File from the previous step
-fasta_file = "P33478_dengue_type1.fasta"
+from __future__ import annotations
 
-print("[LOG] Starting sequence analysis for Dengue Virus...")
+import json
+import sys
+from pathlib import Path
 
-# SeqIO parses the FASTA file. 
-# Although FASTA files can contain multiple sequences, ours has just one.
-for record in SeqIO.parse(fasta_file, "fasta"):
-    print(f"[LOG] Successfully loaded record ID: {record.id}")
-    print(f"[LOG] Total polyprotein string length: {len(record.seq)} amino acids")
+_SRC = Path(__file__).resolve().parent / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
-    # The entire string is the polyprotein. 
-    # The Envelope (E) protein roughly spans from amino acid 281 to 775.
-    # Python uses 0-based indexing, so the 281st amino acid is index 280.
-    start_index_e_protein = 280
-    end_index_e_protein = 775
-    
-    # Slicing the string to isolate the E-Protein
-    e_protein_seq = record.seq[start_index_e_protein:end_index_e_protein]
-    print(f"[LOG] Extracted Envelope (E) protein. Length: {len(e_protein_seq)} amino acids")
-    
-    # --- FINDING THE DOCKING STATION ---
-    # The E-Protein has three domains. Domain III (DIII) is the part that actually 
-    # binds to the human cell receptors. It is located roughly in the last 
-    # 100 amino acids of the E-Protein.
-    
-    domain3_start = 295  # Relative to the E-Protein string
-    domain3_end = 395    # Relative to the E-Protein string
-    
-    # Slicing again to isolate the specific Receptor Binding Domain
-    receptor_binding_domain = e_protein_seq[domain3_start:domain3_end]
-    
-    print("[LOG] --- TARGET ACQUIRED ---")
-    print("[LOG] Receptor Binding Domain (Domain III) sequence extracted:")
-    print(f"[LOG] {receptor_binding_domain}")
-    print("[LOG] Note: This is the critical target zone for building a neutralizing binder.")
+from pandengue.cli import run_stage
+from pandengue.config import load_config
+
+
+def main() -> int:
+    result = run_stage("fetch-sequences", load_config(), dry_run=True)
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+

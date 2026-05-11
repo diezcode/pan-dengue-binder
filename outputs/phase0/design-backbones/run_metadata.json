@@ -1,0 +1,17 @@
+{
+  "config_hash": "58ad938d5205a39e77e6be254c6b02c2cb8b06f59505365a9bb04df414ad9016",
+  "created_at_utc": "2026-05-11T21:22:37.204633+00:00",
+  "dry_run": true,
+  "git_commit": null,
+  "inputs": {},
+  "platform": "Windows-11-10.0.26200-SP0",
+  "project": "pan-dengue-binder",
+  "python": {
+    "implementation": "CPython",
+    "version": "3.12.13"
+  },
+  "stage": "design-backbones",
+  "tools": {
+    "design-backbones": "construct_rfdiffusion_design_command"
+  }
+}

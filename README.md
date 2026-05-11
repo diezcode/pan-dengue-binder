@@ -1,80 +1,128 @@
-# Pan-Dengue Binder: Generative AI In-Silico Pipeline
+# Pan-Dengue Binder
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Active%20Development-green.svg" alt="Project Status">
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/badge/Tech-Python%20%7C%20CUDA%20%7C%20WSL2-yellow.svg" alt="Tech Stack">
-  <img src="https://img.shields.io/badge/AI-RFdiffusion%20%7C%20ProteinMPNN%20%7C%20AlphaFold2-purple.svg" alt="AI Models">
-</p>
+Safety-conscious computational research tooling for dengue protein sequence and structure analysis.
 
-## 🧬 Project Overview & The Context
-The goal of this project is to build a modern **in-silico Bio-AI Pipeline** designed for the research and generative development of a universal neutralizer against the Dengue virus. 
+This repository is being organized as a reproducible software project for exploring dengue protein conservation, structure mapping, target-atlas reporting, and candidate prioritization hypotheses. It is not a clinical product, medical claim, wet-lab protocol collection, or proof of efficacy.
 
-Instead of relying on the error-prone human immune system, we approach virology as software engineers. We design a software architecture that orchestrates cutting-edge generative AI models to mathematically design artificial "mini-proteins" (de novo binders) from scratch. These computational molecules are designed to mechanically lock and seal the virus, preventing it from binding to human cells.
+## Project Scope
 
-### The Biological Problem: The ADE Effect
-Dengue fever is notoriously difficult to vaccinate against because the virus exists in four distinct serotypes (variants). The primary challenge in combating Dengue is the **Antibody-Dependent Enhancement (ADE) effect**. 
+The project focuses on safe computational work:
 
-If a patient is infected with Dengue Type 1, they develop antibodies against it. However, if they are later infected with Type 2, the immune system deploys the old (Type 1) antibodies. These antibodies only partially fit the new variant. Instead of neutralizing the virus, the antibody accidentally acts as a "Trojan Horse", helping the live virus to heavily invade human immune cells (macrophages). This explosive viral replication causes severe, often fatal, hemorrhagic fever.
+- collecting and documenting dengue sequence and structure metadata;
+- comparing DENV-1, DENV-2, DENV-3, and DENV-4 references and broader datasets;
+- mapping conservation onto protein structures;
+- generating auditable target-atlas reports;
+- building dry-run wrappers around external computational tools;
+- recording provenance, configuration, and run metadata.
 
-### The Solution Strategy: The Achilles Heel
-To bypass the deadly ADE effect, our pipeline targets a single, highly conserved region on the virus's surface—specifically, **Domain III of the E-Protein**. 
+The repository should not contain infectious-virus methods, wet-lab procedures, clinical dosing guidance, or claims that a candidate prevents, treats, or cures disease. Any experimental or translational work would require qualified institutional partners and appropriate review.
 
-Algorithmic alignment of all four Dengue variants proves that this tiny physical structure is **100% identical across all serotypes**. The virus cannot mutate this spot without destroying its own ability to infect cells. 
-Our strategy leverages generative AI to craft an entirely new, hyper-specific molecule (a "binder"). This artificial molecule is engineered to fit perfectly and exclusively onto this immutable weak spot—mechanically sealing the virus without triggering the ADE mechanism.
+## Current Status
 
----
+Phase 0 foundation is in progress:
 
-## 🏗️ AI Architecture & Pipeline
+- `config/default.yaml` stores project paths, data-source IDs, dry-run defaults, and external tool placeholders.
+- `src/pandengue/` contains import-safe Python modules.
+- root-level legacy scripts are compatibility wrappers and no longer perform network or external-tool work on import.
+- `pandengue` CLI stages can write dry-run metadata.
+- `docs/implementation_plan.md` describes the staged implementation roadmap.
+- `docs/abbreviations.md` defines common terminology such as ADE, DENV, E protein, EDIII, EDE, and MSA.
 
-This project is not a single script, but a chained assembly line of multiple state-of-the-art neural networks running locally on consumer hardware (e.g., RTX 4080 via WSL2).
+Phase 1 sequence data-layer support is also available:
 
-### 1. Data Acquisition & Target Isolation (Python Layer)
-* **`fetch_dengue.py`**: Interacts with the UniProt biological database to download the raw amino acid sequences of the virus.
-* **`core_alignment_engine.py` & `find_conserved_target.py`**: Algorithmically scans the four viral variants, performing Multiple Sequence Alignment (MSA) to map the exact conserved target zones.
-* **`extract_3d_target.py`**: Parses the structural 3D CAD files (.pdb) from the Protein Data Bank and slices out only the precise 3D coordinates (X, Y, Z) of the target motif (Domain III). This becomes the invariant template for the AI.
+- `pandengue fetch-sequences` can normalize local bulk FASTA files and cached/fetched UniProt references.
+- The normalized E-protein dataset is written to `data/processed/sequences/denv_e_proteins.fasta`.
+- `data/processed/sequences/sequence_manifest.tsv` records accession, source, serotype, provenance fields, extraction method, duplicate grouping, and filter status.
+- `reports/sequence_data.md` states sequence counts per serotype and all filtering outcomes.
+- Alignment and target-atlas stages require the manifest before non-dry-run conservation outputs can proceed.
 
-### 2. Generative Design (RFdiffusion)
-* **The Role:** The 3D Sculptor.
-* **Mechanism:** Using the isolated target coordinates, RFdiffusion (developed by the Baker Lab, UW) diffuses a completely new 3D protein structure around the Dengue virus target. It creates thousands of geometric "backbones" (mimetic locks) that fit the viral "keyhole".
-* **Integration:** Orchestrated via `run_rfdiffusion_wrapper.py`.
+Phase 2 alignment/conservation support is available:
 
-### 3. Sequence Translation (ProteinMPNN)
-* **The Role:** The Chemical Compiler.
-* **Mechanism:** The geometric backbones from RFdiffusion lack chemical identity. ProteinMPNN reads these 3D shapes and predicts the exact sequence of amino acids required to fold into that shape stably in a biological environment (solubility, atomic forces).
-* **Integration:** Handled by `parse_to_mpnn.py`.
+- `pandengue build-alignment` reads the normalized E FASTA and manifest, then writes an aligned FASTA under `data/processed/alignments/`.
+- MAFFT or Clustal Omega can be used when configured and installed; a deterministic reference-guided Python fallback supports small test datasets.
+- `outputs/target_atlas/conservation.tsv` records alignment-column metrics, entropy, gap fraction, consensus residues, support counts, and reference E/polyprotein numbering.
+- `outputs/target_atlas/conservation_by_serotype.tsv` records the same style of metrics per serotype.
+- `outputs/target_atlas/alignment_summary.json` records method, parser, reference, counts, and checksums.
 
-### 4. In-Silico Validation (AlphaFold2 / ColabFold)
-* **The Role:** The Uncompromising Verifier.
-* **Mechanism:** The newly generated amino acid sequences are fed "blindly" into AlphaFold2. If AlphaFold computationally folds the sequence and predicts that it forcefully binds to the Dengue target motif, the molecule passes validation.
+Phase 4 target-atlas support is available:
 
----
+- `pandengue build-target-atlas` ranks epitope hypotheses from Phase 2 conservation data and optional `outputs/target_atlas/structure_mapping.tsv`.
+- Candidate patches are filtered by configurable conservation, entropy, gap, and support thresholds, then clustered by sequence proximity and optional 3D residue distance.
+- `outputs/target_atlas/epitope_candidates.tsv` and `outputs/target_atlas/ranked_epitopes.json` record transparent score components for conservation, structure, literature/context, ADE context, designability, and template support.
+- `reports/target_atlas.md` explains ranked epitopes, failure modes, visualizable residue IDs, and whether 2-4 hypotheses pass the pilot-design decision gate.
+- Domain III is treated as one hypothesis among several, not as a hardcoded final target.
 
-## 🚀 Environment Setup & Hardware
+## Repository Layout
 
-This pipeline requires a dedicated Linux environment with CUDA support to interface with PyTorch and the heavy neural network weights.
+```text
+config/
+  default.yaml
+docs/
+  abbreviations.md
+  biomedical_roadmap.md
+  implementation_plan.md
+src/
+  pandengue/
+tests/
+reports/
+```
 
-**Prerequisites (Windows Users):**
-1. Ensure hardware virtualization is enabled in your BIOS.
-2. Install the Windows Subsystem for Linux (WSL2):
-   ```powershell
-   wsl --install -d Ubuntu
-   ```
-3. Inside WSL2, install the NVIDIA CUDA Toolkit and PyTorch.
-4. Clone this repository into the Linux subsystem to avoid I/O bottlenecks.
+The current root-level scripts remain for compatibility:
 
-## 📥 External Model Weights
-*Note: The actual neural network intelligence is not stored in this repository.*
-Before running the generation phase, you must download the respective pretrained model weights for:
-*   **RFdiffusion** (~5 GB)
-*   **ProteinMPNN** (~200 MB)
-*   **ColabFold/AlphaFold2** (Dependent on MSA databases)
+- `fetch_dengue.py`
+- `core_alignment_engine.py`
+- `find_conserved_target.py`
+- `extract_3d_target.py`
+- `parse_to_mpnn.py`
+- `run_rfdiffusion_wrapper.py`
 
----
+They now delegate to the package-level planning code.
 
-## ⚖️ License
-This project is licensed under the **MIT License**. 
+## CLI Usage
 
-We believe that computational approaches to severe global health threats should remain open-source. You are free to use, modify, distribute, and build upon this architecture without restriction, provided that the original copyright notice is included.
+From the repository root, after installing the package in a Python environment:
 
-See the `LICENSE` file for full details.
+```powershell
+python -m pip install -e .
+pandengue --dry-run fetch-sequences
+pandengue --dry-run build-alignment
+pandengue --dry-run prepare-structure
+pandengue --dry-run report
+```
+
+In this Codex environment, Python may not be on `PATH`. The bundled runtime can still run the package by setting `PYTHONPATH=src` or using an editable install in a local environment.
+
+Example without installation:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m pandengue.cli --dry-run report
+```
+
+## Phase Roadmap
+
+The detailed implementation plan is in [docs/implementation_plan.md](docs/implementation_plan.md).
+
+High-level phases:
+
+1. Reproducible repo foundation.
+2. Sequence manifest and alignment pipeline.
+3. Structure parsing and residue mapping.
+4. Target-atlas generation and ranking.
+5. Dry-run and then configured external computational design wrappers.
+6. Prediction parsing, scoring, clustering, and reporting.
+7. Candidate dossiers for qualified review.
+
+## Development Notes
+
+The Phase 0 code is standard-library first so the repository can be tested even before bioinformatics dependencies are installed. Later phases may use optional dependencies such as Biopython, Requests, and PyYAML.
+
+Run unit tests with:
+
+```powershell
+python -m unittest discover -s tests
+```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
